@@ -5,10 +5,10 @@
 #################################################################################
 
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-BUCKET = [OPTIONAL] your-bucket-for-syncing-data (do not include 's3://')
+BUCKET = mlmodelsagemakerdemo
 PROFILE = default
-PROJECT_NAME = cookiecutter-data-science-example
-PYTHON_INTERPRETER = python
+PROJECT_NAME = cluster-analysis
+PYTHON_INTERPRETER = C:\Users\colendi\venvs\cookiecutter-clustering-example\Scripts\python
 
 ifeq (,$(shell which conda))
 HAS_CONDA=False
@@ -20,14 +20,34 @@ endif
 # COMMANDS                                                                      #
 #################################################################################
 
+## Test python environment is setup correctly
+test_environment:
+	$(PYTHON_INTERPRETER) test_environment.py
+
 ## Install Python Dependencies
 requirements: test_environment
 	$(PYTHON_INTERPRETER) -m pip install -U pip setuptools wheel
 	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
 
-## Make Dataset
-data: requirements
-	$(PYTHON_INTERPRETER) src/data/make_dataset.py data/raw data/processed
+## Download Data from S3
+##sync_data_from_s3:
+##ifeq (default,$(PROFILE))
+##	aws s3 sync s3://$(BUCKET)/sagemaker/demo-us-accidents/raw-data/ data/raw/
+##else
+##	aws s3 sync s3://$(BUCKET)/sagemaker/demo-us-accidents/raw-data/ data/raw/ --profile $(PROFILE)  
+##endif
+
+## Download Data from Kaggle
+download: requirements
+	kaggle datasets download -d sobhanmoosavi/us-accidents --force -p data/raw
+
+## Make Dataset, Process and Analyze Data
+data: download
+	$(PYTHON_INTERPRETER) src/data/make_dataset.py data/raw/us-accidents.zip data/processed/us-accidents.csv
+
+## Run PCA and Clustering
+clustering: data
+	$(PYTHON_INTERPRETER) src/main.py
 
 ## Delete all compiled Python files
 clean:
@@ -39,20 +59,14 @@ lint:
 	flake8 src
 
 ## Upload Data to S3
-sync_data_to_s3:
-ifeq (default,$(PROFILE))
-	aws s3 sync data/ s3://$(BUCKET)/data/
-else
-	aws s3 sync data/ s3://$(BUCKET)/data/ --profile $(PROFILE)
-endif
+##sync_data_to_s3:
+##ifeq (default,$(PROFILE))
+##	aws s3 sync data/raw/ s3://$(BUCKET)/sagemaker/demo-us-accidents/raw-data/
+##else
+##	aws s3 sync data/raw/ s3://$(BUCKET)/sagemaker/demo-us-accidents/raw-data/ --profile $(PROFILE)
+##endif
 
-## Download Data from S3
-sync_data_from_s3:
-ifeq (default,$(PROFILE))
-	aws s3 sync s3://$(BUCKET)/data/ data/
-else
-	aws s3 sync s3://$(BUCKET)/data/ data/ --profile $(PROFILE)
-endif
+
 
 ## Set up python interpreter environment
 create_environment:
@@ -72,9 +86,6 @@ else
 	@echo ">>> New virtualenv created. Activate with:\nworkon $(PROJECT_NAME)"
 endif
 
-## Test python environment is setup correctly
-test_environment:
-	$(PYTHON_INTERPRETER) test_environment.py
 
 #################################################################################
 # PROJECT RULES                                                                 #

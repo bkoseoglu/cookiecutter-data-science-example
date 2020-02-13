@@ -20,6 +20,7 @@ def main(input_filename,output_filename):
     logger.info('making final data set from raw data')
     logger.info('first import data')
     df = pd.read_csv(input_filename)
+    
 
     logger.info("next drop columns that are not variant enough")
     variance_threshold_selector(df.dropna(),0.8,logger)
