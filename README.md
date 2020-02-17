@@ -3,6 +3,14 @@ cookiecutter-data-science-example
 
 This project implements cookiecutter data science template
 
+## Prerequests:
+
+Prerequests for successful implementation of the project requires
+
++ set PYTHON_INTERPRETER to your own python interpreter
++ sign up for a kaggle account 
+
+
 Project Organization
 ------------
 
